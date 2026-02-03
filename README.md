@@ -41,6 +41,28 @@ The repository contains:
 2. Follow the instructions in their README to generate the test data
 3. Run the baseline implementation or create your own optimized solution
 
+## Performance Benchmark
+
+### System Specifications
+
+| Component | Specification |
+|-----------|--------------|
+| **CPU** | Load Avg: 3.61, 3.77, 4.31 |
+| **CPU Usage** | 17.49% user, 16.78% sys, 65.72% idle |
+| **Physical Memory** | 7.6GB (7467M used: 1321M wired, 3771M compressor, 166M unused) |
+| **Virtual Memory** | 210TB vsize, 5.7GB framework vsize |
+| **Processes** | 399 total (4 running, 395 sleeping, 3478 threads) |
+| **Disk I/O** | Read: 1.2TB, Write: 988GB |
+| **Network I/O** | In: 7.7GB (6.8M packets), Out: 1.6GB (2.2M packets) |
+
+### Benchmark Results
+
+| Approach | Time (seconds) | Notes |
+|----------|----------------|-------|
+| **Brute Force** | 366s (~6 minutes) | Baseline implementation |
+
+> 💡 **Challenge Goal**: Optimize the solution to process 1 billion rows significantly faster than the brute force approach!
+
 ## Why This Challenge?
 
 This challenge demonstrates:
