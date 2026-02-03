@@ -47,13 +47,10 @@ The repository contains:
 
 | Component | Specification |
 |-----------|--------------|
-| **CPU** | Load Avg: 3.61, 3.77, 4.31 |
-| **CPU Usage** | 17.49% user, 16.78% sys, 65.72% idle |
-| **Physical Memory** | 7.6GB (7467M used: 1321M wired, 3771M compressor, 166M unused) |
-| **Virtual Memory** | 210TB vsize, 5.7GB framework vsize |
-| **Processes** | 399 total (4 running, 395 sleeping, 3478 threads) |
-| **Disk I/O** | Read: 1.2TB, Write: 988GB |
-| **Network I/O** | In: 7.7GB (6.8M packets), Out: 1.6GB (2.2M packets) |
+| **Model** | MacBook Air (Model Identifier: MacBookAir10,1) |
+| **Chip** | Apple M1 |
+| **CPU Cores** | 8 cores (4 performance + 4 efficiency) |
+| **Memory** | 8 GB |
 
 ### Benchmark Results
 
