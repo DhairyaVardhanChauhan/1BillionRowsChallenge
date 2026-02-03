@@ -54,6 +54,20 @@ The repository contains:
 
 ### Benchmark Results
 
+## PROFILER DETAILS:
+
+<img width="1040" height="653" alt="image" src="https://github.com/user-attachments/assets/61a3238f-9755-4354-922d-920242e8dd98" />
+
+## FLAME GRAPH:
+
+<img width="1440" height="900" alt="image" src="https://github.com/user-attachments/assets/da7fa4fd-8818-476a-993f-fd928c562d9a" />
+
+## ATTACHING A PROFILER MADE THE PROCESS TOOK A LONG TIME HERE IS A SNAPSHOT OF HOW MANY INVOCATIONS THE ADD METHOD TOOK.
+
+<img width="1048" height="664" alt="image" src="https://github.com/user-attachments/assets/d5761b2e-619b-4d74-8e6f-fad3722e00ca" />
+
+<br>
+
 | Approach | Time (seconds) | Notes |
 |----------|----------------|-------|
 | **Brute Force** | 366s (~6 minutes) | Baseline implementation |
