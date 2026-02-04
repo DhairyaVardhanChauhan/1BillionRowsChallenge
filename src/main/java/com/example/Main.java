@@ -35,13 +35,12 @@ public class Main {
         Map<String,Stats> mp = new HashMap<>();
         BufferedReader bufferedReader = new BufferedReader(new FileReader("/Users/salescode/projects/1BRC/src/main/java/com/example/measurements.txt"));
         String line;
-
         System.out.println("Starting reading: ");
         long statTime = System.currentTimeMillis();
         while((line = bufferedReader.readLine()) != null){
-            String [] parts = line.split(";");
-            String city = parts[0];
-            double temp = Double.parseDouble(parts[1]);
+            int splitIndex = line.indexOf(";");
+            String city = line.substring(0,splitIndex);
+            double temp = fastParseDouble(line,splitIndex+1);
             mp.computeIfAbsent(city, k -> new Stats()).add(temp);
         }
         System.out.println("Reading completed in : " + (System.currentTimeMillis() - statTime));
@@ -56,6 +55,35 @@ public class Main {
                     s.max
             );
         }
+    }
 
+    static double fastParseDouble(String str,int start){
+        boolean neg = false;
+        if(str.charAt(start) == '-'){
+            neg = true;
+            start++;
+        }
+        int intPart = 0;
+        int fracPart = 0;
+        int fracDiv = 1;
+        boolean fraction = false;
+
+        for (int i = start; i < str.length(); i++) {
+            char c = str.charAt(i);
+            if (c == '.') {
+                fraction = true;
+                continue;
+            }
+            int digit = c - '0';
+            if (!fraction) {
+                intPart = intPart * 10 + digit;
+            }
+            else {
+                fracPart = fracPart * 10 + digit;
+                fracDiv *= 10;
+            }
+        }
+        double val = intPart + (double) fracPart / fracDiv;
+        return neg?-val:val;
     }
 }
