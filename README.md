@@ -35,8 +35,8 @@ The repository contains:
 - Performance benchmarks
 - Community solutions
 
- Nothing much in version 2 we just changed the way we parse decimals and how we extract content (removing split and adding indexof)
-- By doing this we could complete the task in ***211s*** .
+# WILL EXPLAIN HERE TOMORROW
+- By doing this we could complete the task in ***97.616s*** .
 ## Quick Setup
 
 1. Clone the official repository
