@@ -1,14 +1,13 @@
 package com.example;
 
-import java.awt.desktop.SystemSleepEvent;
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.nio.Buffer;
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+
 
 public class Main {
 
@@ -33,16 +32,35 @@ public class Main {
     public static void main(String[] args) throws Exception {
 
         Map<String,Stats> mp = new HashMap<>();
-        BufferedReader bufferedReader = new BufferedReader(new FileReader("/Users/salescode/projects/1BRC/src/main/java/com/example/measurements.txt"));
-        String line;
+        BufferedInputStream bufferedReader = new BufferedInputStream(new FileInputStream("/Users/salescode/projects/1BRC/src/main/java/com/example/measurements.txt"), 1 << 16);
+        byte[] buffer = new byte[1<<16];
+        int len;
+
+        byte[]carry = new byte[256];
+        int carryLen = 0;
         System.out.println("Starting reading: ");
         long statTime = System.currentTimeMillis();
-        while((line = bufferedReader.readLine()) != null){
-            int splitIndex = line.indexOf(";");
-            String city = line.substring(0,splitIndex);
-            double temp = fastParseDouble(line,splitIndex+1);
-            mp.computeIfAbsent(city, k -> new Stats()).add(temp);
+
+        while ((len = bufferedReader.read(buffer)) != -1) {
+            int start = 0;
+            for (int i = 0; i < len; i++) {
+                if (buffer[i] == '\n') {
+                    int lineLen = carryLen + (i - start);
+                    byte[] line = new byte[lineLen];
+                    System.arraycopy(carry,0,line,0,carryLen);
+                    System.arraycopy(buffer,start,line,carryLen,i-start);
+                    parseLine(line, 0, lineLen, mp);
+                    carryLen = 0;
+                    start = i + 1;
+                }
+            }
+
+            if(start < len){  // no /n found
+                carryLen = len - start;
+                System.arraycopy(buffer, start, carry, 0, carryLen);
+            }
         }
+        bufferedReader.close();
         System.out.println("Reading completed in : " + (System.currentTimeMillis() - statTime));
         List<String> cities = new ArrayList<>(mp.keySet());
         for(String city:cities){
@@ -57,9 +75,9 @@ public class Main {
         }
     }
 
-    static double fastParseDouble(String str,int start){
+    static double fastParseDouble(byte[] str,int start,int end){
         boolean neg = false;
-        if(str.charAt(start) == '-'){
+        if(str[start] == '-'){
             neg = true;
             start++;
         }
@@ -68,8 +86,8 @@ public class Main {
         int fracDiv = 1;
         boolean fraction = false;
 
-        for (int i = start; i < str.length(); i++) {
-            char c = str.charAt(i);
+        for (int i = start; i < end; i++) {
+            byte c = str[i];
             if (c == '.') {
                 fraction = true;
                 continue;
@@ -85,5 +103,15 @@ public class Main {
         }
         double val = intPart + (double) fracPart / fracDiv;
         return neg?-val:val;
+    }
+
+    static void parseLine(byte[] buffer,int start,int end,Map<String,Stats>mp){
+        int seperatorIndex = start;
+        while(buffer[seperatorIndex] != ';'){
+            seperatorIndex++;
+        }
+        String city = new String(buffer, start, seperatorIndex - start);
+        double temperature = fastParseDouble(buffer,seperatorIndex+1,end);
+        mp.computeIfAbsent(city,k->new Stats()).add(temperature);
     }
 }
