@@ -35,8 +35,6 @@ The repository contains:
 - Performance benchmarks
 - Community solutions
 
-# WILL EXPLAIN HERE TOMORROW
-- By doing this we could complete the task in ***97.616s*** .
 ## Quick Setup
 
 1. Clone the official repository
@@ -51,5 +49,47 @@ This challenge demonstrates:
 - Parallel processing capabilities
 - JVM performance tuning
 - Creative problem-solving in Java
+
+---
+
+## Version 3 Insights
+
+### Performance
+Completed the task in **97.616s** ⚡
+
+### Key Optimizations 🚀
+
+#### 1. Efficient File Reading
+Instead of reading line by line as Strings:
+- Read the file in large byte chunks
+- Manually detect line breaks (`\n`)
+- Parse numbers without creating unnecessary objects
+```java
+BufferedInputStream bufferedReader = 
+    new BufferedInputStream(new FileInputStream(filePath), 1 << 16);
+```
+- Reads **64 KB** at a time
+- Much faster than reading line by line
+- Data is stored in a byte array buffer
+
+#### 2. Handling Split Lines
+Sometimes a line is cut in half when reading chunks.
+
+**Example:**
+```
+Lon
+don;12.3\n
+```
+
+**Solution:**
+- Store the partial line in `carry`
+- When the next chunk arrives, merge it
+- Guarantees every line is parsed correctly
+```java
+byte[] carry = new byte[256];
+int carryLen = 0;
+```
+
+---
 
 Happy coding! 🚀
