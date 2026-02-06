@@ -51,3 +51,5 @@ This challenge demonstrates:
 - Creative problem-solving in Java
 
 Happy coding! 🚀
+
+Note: This project will have several versions with progressive optimizations. You can check different implementations from the branches.Each version improving on the previous version.
