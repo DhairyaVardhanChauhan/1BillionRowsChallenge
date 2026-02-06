@@ -55,7 +55,7 @@ This challenge demonstrates:
 ## Version 3 Insights
 
 ### Performance
-Completed the task in **97.616s** ⚡
+Completed the task in **85.616s** ⚡
 
 ### Key Optimizations 🚀
 
@@ -89,6 +89,32 @@ don;12.3\n
 byte[] carry = new byte[256];
 int carryLen = 0;
 ```
+
+Notice the Used Memory has droped a lot from version1
+
+# Version3
+<img width="1039" height="443" alt="image" src="https://github.com/user-attachments/assets/0041bf28-446c-48c6-b469-998f8a07c79b" />
+
+# Version1
+<img width="833" height="289" alt="image" src="https://github.com/user-attachments/assets/5ad1024f-145f-4ba0-aec0-a32870d99dc2" />
+
+
+# Insights on both images
+
+Version1
+ - Used heap: ~119 MB
+ - Heap usage fluctuates high
+
+Needs more memory to do the same work
+
+Version3 
+
+- Used heap: ~35 MB
+
+- Heap usage is much lower
+
+- Does the same work with ~3.5× less memory
+
 
 ---
 
