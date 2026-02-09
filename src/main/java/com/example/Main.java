@@ -2,11 +2,10 @@ package com.example;
 
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.util.*;
 
 
 public class Main {
@@ -29,50 +28,98 @@ public class Main {
         }
     }
 
-    public static void main(String[] args) throws Exception {
+    static class ChunkProcessor implements Runnable {
+        private final String filePath;
+        private final long start;
+        private final long end;
+        private final Map<String, Stats> result = new HashMap<>(16_384);
 
-        Map<String,Stats> mp = new HashMap<>();
-        BufferedInputStream bufferedReader = new BufferedInputStream(new FileInputStream("/Users/salescode/projects/1BRC/src/main/java/com/example/measurements.txt"), 1 << 16);
-        byte[] buffer = new byte[1<<16];
-        int len;
+        public ChunkProcessor(String filePath, long start, long end) {
+            this.filePath = filePath;
+            this.start = start;
+            this.end = end;
+        }
 
-        byte[]carry = new byte[256];
-        int carryLen = 0;
-        System.out.println("Starting reading: ");
-        long statTime = System.currentTimeMillis();
+        Map<String, Stats> getResult() {
+            return result;
+        }
 
-        while ((len = bufferedReader.read(buffer)) != -1) {
-            int start = 0;
-            for (int i = 0; i < len; i++) {
-                if (buffer[i] == '\n') {
-                    int lineLen = carryLen + (i - start);
-                    byte[] line = new byte[lineLen];
-                    System.arraycopy(carry,0,line,0,carryLen);
-                    System.arraycopy(buffer,start,line,carryLen,i-start);
-                    parseLine(line, 0, lineLen, mp);
-                    carryLen = 0;
-                    start = i + 1;
+        @Override
+        public void run() {
+            try (FileChannel channel = new FileInputStream(filePath).getChannel()) {
+                channel.position(start);
+
+                ByteBuffer buffer = ByteBuffer.allocateDirect(1 << 16);
+                byte[] carry = new byte[256];
+                int carryLen = 0;
+                long position = start;
+
+                while (position < end) {
+                    int bytesRead = channel.read(buffer);
+                    if (bytesRead == -1) break;
+
+                    buffer.flip();
+                    int limit = buffer.limit();
+
+                    int startIdx = 0;
+                    for (int i = 0; i < limit; i++) {
+                        if (buffer.get(i) == '\n') {
+                            int lineLen = carryLen + (i - startIdx);
+                            byte[] line = new byte[lineLen];
+
+                            if (carryLen > 0) {
+                                buffer.position(startIdx);
+                                buffer.get(line, carryLen, i - startIdx);
+                                System.arraycopy(carry, 0, line, 0, carryLen);
+                            } else {
+                                buffer.position(startIdx);
+                                buffer.get(line, 0, i - startIdx);
+                            }
+
+                            parseLine(line, 0, lineLen, result);
+
+                            carryLen = 0;
+                            startIdx = i + 1;
+                        }
+                    }
+
+                    if (startIdx < limit) {
+                        int remaining = limit - startIdx;
+                        buffer.position(startIdx);
+                        buffer.get(carry, 0, remaining);
+                        carryLen = remaining;
+                    }
+
+                    position += bytesRead;
+                    buffer.clear();
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public static long [] chunkStartOffsets(FileChannel channel, int chunks, long fileSize) throws IOException {
+
+        long[] offsets = new long[chunks];
+        offsets[0] = 0;
+        ByteBuffer oneByte = ByteBuffer.allocate(1);
+        for(int i = 1;i<chunks;i++){
+            long pos = fileSize*i/chunks;
+            channel.position(pos);
+            while(true){
+                oneByte.clear();
+                if(channel.read(oneByte) == -1){
+                    break;
+                }
+                oneByte.flip();
+                if (oneByte.get() == '\n') {
+                    offsets[i] = channel.position();
+                    break;
                 }
             }
-
-            if(start < len){  // no /n found
-                carryLen = len - start;
-                System.arraycopy(buffer, start, carry, 0, carryLen);
-            }
         }
-        bufferedReader.close();
-        System.out.println("Reading completed in : " + (System.currentTimeMillis() - statTime));
-        List<String> cities = new ArrayList<>(mp.keySet());
-        for(String city:cities){
-            Stats s = mp.get(city);
-            System.out.printf(
-                    "%s=%.1f/%.1f/%.1f%n",
-                    city,
-                    s.min,
-                    s.avg(),
-                    s.max
-            );
-        }
+        return offsets;
     }
 
     static double fastParseDouble(byte[] str,int start,int end){
@@ -114,4 +161,57 @@ public class Main {
         double temperature = fastParseDouble(buffer,seperatorIndex+1,end);
         mp.computeIfAbsent(city,k->new Stats()).add(temperature);
     }
+
+    public static void main(String[] args) throws Exception {
+        long startTime = System.currentTimeMillis();
+        System.out.println("Started calculating");
+        FileChannel channelBuffer = new FileInputStream("/Users/salescode/projects/1BRC/src/main/java/com/example/measurements.txt").getChannel();
+        int cores = Runtime.getRuntime().availableProcessors();
+        long fileSize = channelBuffer.size();
+        long[] offsets = chunkStartOffsets(channelBuffer, cores, fileSize);
+        ChunkProcessor[] workers = new ChunkProcessor[cores];
+        Thread [] threads = new Thread[cores];
+        for(int i = 0;i<cores;i++){
+            long start = offsets[i];
+            long end = (i+1 < cores)?offsets[i+1]:fileSize;
+            workers[i] = new ChunkProcessor("/Users/salescode/projects/1BRC/src/main/java/com/example/measurements.txt",start,end);
+            threads[i] = new Thread(workers[i]);
+            threads[i].start();
+        }
+        for(Thread t : threads){
+            t.join();
+        }
+
+        Map<String,Stats> finalMap = new HashMap<>(32_768);
+        long endTime = System.currentTimeMillis();
+        System.out.println("Total time taken to sort:"+(endTime-startTime));
+        for (ChunkProcessor worker : workers) {
+            for(var entry:worker.getResult().entrySet()){
+                finalMap.merge(entry.getKey(),entry.getValue(),(a,b)->{
+                    a.min = Math.min(a.min, b.min);
+                    a.max = Math.max(a.max, b.max);
+                    a.sum += b.sum;
+                    a.count += b.count;
+                    return a;
+                });
+            }
+        }
+
+        List<String> cities = new ArrayList<>(finalMap.keySet());
+        Collections.sort(cities);
+        for (String city : cities) {
+            Stats s = finalMap.get(city);
+            System.out.printf(
+                    "%s=%.1f/%.1f/%.1f%n",
+                    city,
+                    s.min,
+                    s.avg(),
+                    s.max
+            );
+        }
+
+
+    }
+
+
 }
