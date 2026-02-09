@@ -184,7 +184,6 @@ public class Main {
 
         Map<String,Stats> finalMap = new HashMap<>(32_768);
         long endTime = System.currentTimeMillis();
-        System.out.println("Total time taken to sort:"+(endTime-startTime));
         for (ChunkProcessor worker : workers) {
             for(var entry:worker.getResult().entrySet()){
                 finalMap.merge(entry.getKey(),entry.getValue(),(a,b)->{
@@ -196,7 +195,7 @@ public class Main {
                 });
             }
         }
-
+        System.out.println("Total time taken to sort:"+(endTime-startTime));
         List<String> cities = new ArrayList<>(finalMap.keySet());
         Collections.sort(cities);
         for (String city : cities) {
